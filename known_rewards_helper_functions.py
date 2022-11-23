@@ -1,6 +1,8 @@
 import numpy as np
 import networkx as nx
 
+import warnings
+
 def offline_SP_planning(G_cyc,means):
     G = G_cyc.copy()
     G.remove_edges_from(nx.selfloop_edges(G_cyc))
@@ -39,7 +41,36 @@ def offline_SP_planning(G_cyc,means):
             break
     return policy,n_calls,n_iter
              
-        
+def EVI_known_transition_planning(G,means,epsilon = 0.0001):
+    '''
+    epsilon: The stopping condition.
+    '''
+    assert(epsilon>0)
+    u = np.zeros(G.number_of_nodes())
+
+    iter_count = 0
+    
+    max_iter = np.min([1e4,1/epsilon]) 
+    #  max_iter: Hard upper-bound of the number of iterations, to ensure the algorithm does not fall into infinite loop
+
+    while iter_count<=max_iter:
+        iter_count+=1 
+
+        u_old = np.array(u)
+
+        for s in G:
+            u[s] = means[s]+np.max(u_old[G[s]])
+        # print(iter_count, u)
+
+        if np.max(u-u_old) - np.min(u-u_old)<epsilon:
+            # print('Gap',np.max(u-u_old) - np.min(u-u_old))
+            break
+
+    policy = {s:list(G[s])[np.argmax(u[G[s]])] for s in G}
+
+    if iter_count> max_iter:
+        warnings.warn('Value iteration terminated before reaching the stopping condition, the resulting policy may be suboptimal.')
+    return policy, u
     
         
         

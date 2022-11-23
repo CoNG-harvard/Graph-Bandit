@@ -1,6 +1,6 @@
 import numpy as np
 
-from known_rewards_helper_functions import offline_SP_planning
+from known_rewards_helper_functions import offline_SP_planning,EVI_known_transition_planning
 
 
 def get_ucb(gb,nodes=None):
@@ -62,3 +62,42 @@ def local_ts_agent(env,
     # Take a step in the environment
     best_nb = neighbors[np.argmax(mu_sample)]
     env.step(best_nb)
+
+def UCRL2_ucb(env,nodes=None,delta = 0.01):
+    '''
+        delta: a number in (0, 1], characterizing the probability that the true mean falls into the confidence interval [LCB, UCB]
+    '''
+    if nodes is None:
+        nodes = env.nodes
+        
+    ave_reward = np.array([np.mean(env.nodes[i]['r_hist']) for i in nodes] )
+    nm = np.array([env.nodes[i]['n_visits'] for i in nodes])
+    
+    tm = len(env.visitedStates)
+    
+    S = env.G.number_of_nodes()
+    A = 2 * env.G.number_of_edges() # Since our graph is undirected, A = 2|E|
+
+    ucb = ave_reward + np.sqrt(7*np.log(2*S*A*tm/delta)/(2*nm))
+    # ucb = ave_reward + np.sqrt(7*np.log(2*S*tm/delta)/(2*nm))
+    # ucb = ave_reward + np.sqrt(2*np.log(tm)/nm)
+    return ucb
+
+def UCRL2_agent(env,delta = 0.01):
+    
+    ucb = UCRL2_ucb(env,delta = 0.01)
+    
+    tm = len(env.visitedStates)
+    epsilon = 1/np.sqrt(tm) # The stopping condition of value iteration as specified in Jacksch(2008).
+    
+    # Compute the policy.
+    policy,_ = EVI_known_transition_planning(env.G,ucb,epsilon = epsilon)
+    
+    prev_visits = {s:env.nodes[s]['n_visits'] for s in env.G}
+    visits_this_episode = {s:0 for s in env.G}
+    
+    # Keep executing the policy until the doubling terminal condition specified in Jacksh(2008) is meet.
+    while visits_this_episode[env.state]< np.max([1,prev_visits[env.state]]):
+        visits_this_episode[env.state]+=1
+        next_s = policy[env.state]
+        env.step(next_s)

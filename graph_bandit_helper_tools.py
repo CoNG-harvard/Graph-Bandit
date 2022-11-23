@@ -10,6 +10,7 @@ from tqdm import trange
            
         
 
+
 def return_graph(graph_type='fully_connected', n_nodes=6, n_children=None):
     """
     Returns specified graph type.
@@ -80,7 +81,12 @@ def return_graph(graph_type='fully_connected', n_nodes=6, n_children=None):
     elif graph_type =='grid':
         ldim = int(np.ceil(np.sqrt(n_nodes)))
         udim = int(np.floor(np.sqrt(n_nodes)))
-        G = nx.grid_2d_graph(ldim,udim)
+        # G = nx.grid_2d_graph(ldim,udim)
+        G = nx.grid_graph([ldim,udim])
+        G = nx.convert_node_labels_to_integers(G)
+        
+        for i in range(len(G)):
+            G.add_edge(i,i)
     else:
         raise ValueError("Invalid graph type. Must be fully_connected, line, circle, star, or tree.")
     return G
@@ -104,6 +110,7 @@ def draw_graph(G, zero_indexed=True):
 
     
 
+from joblib import Parallel, delayed,cpu_count
 def testQLearning(T, n_samples, epsilon, G,\
                  means=None, mean_magnitude=1, stdev_magnitude=1,\
                  init_nodes=None,prior_uncertainty=10
@@ -127,16 +134,21 @@ def testQLearning(T, n_samples, epsilon, G,\
     if init_nodes is None:
         init_nodes = {alg: None for alg in algorithms}
 
-    for i in trange(n_samples):      
+    def main_loop(i):     
         # Q-learning
         QL = graph_bandit.GraphBandit(means[i], G, belief_update='Bayesian_full_update',\
                                                     bayesian_params=[0, prior_uncertainty*mean_magnitude**2,\
                                                                     stdev_magnitude**2])
         QL.train_QL_agent(H=T, epsilon=epsilon, init_node=init_nodes)
         
-        regrets[i,:] = QL.expectedRegret()[-T:]
-        rewards[i,:] = QL.collected_rewards
+        reg = QL.expectedRegret()[-T:]
+        rew = QL.collected_rewards
 
-            
+        return reg,rew
+
+    output = Parallel(n_jobs = cpu_count())(delayed(main_loop)(i) for i in range(n_samples))
+   
+    regrets = np.array([o[0] for o in output])
+    rewards = np.array([o[1] for o in output])
     return regrets, rewards
 

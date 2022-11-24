@@ -54,6 +54,8 @@ class GraphBandit:
         assert action <= self.num_nodes
         if (action, self.state) in self.G.edges:
             reward = np.random.uniform(low = self.mean[action]-0.5, high=self.mean[action]+0.5)
+            # reward = np.random.binomial(1, self.mean[action])
+
 
             
             state_old = self.state

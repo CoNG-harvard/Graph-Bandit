@@ -39,21 +39,29 @@ def local_ucb_agent(env):
 
     env.step(best_nb)
 
+def get_ts_parameters(env,neighbors,
+                    var_0 = 1.0,
+                    mu_0 = 0.0,
+                    var = 1.0):
+    xsum = np.array([np.sum(env.nodes[i]['r_hist']) for i in neighbors])
+    n = np.array([env.nodes[i]['n_visits'] for i in neighbors])
+
+    var_1 = 1/(var_0 + n/var) 
+    mu_1 = var_1 * (mu_0/var_0 + xsum/var)
+
+    return mu_1,var_1
+
 def local_ts_agent(env,
-                    var_0 = 0.5,
-                    mu_0 = 5,
-                    var = 0.5):
+                    var_0 = 1,
+                    mu_0 = 0.0,
+                    var = 1):
 
     neighbors = [_ for _ in env.G[env.state]]
     
 
     # Bayesian estimation of mu and var estimation with Gaussian Prior
 
-    xsum = np.array([np.sum(env.nodes[i]['r_hist']) for i in neighbors])
-    n = np.array([env.nodes[i]['n_visits'] for i in neighbors])
-
-    var_1 = 1/(var_0 + n/var) 
-    mu_1 = var_1 * (mu_0/var_0 + xsum/var)
+    mu_1,var_1 = get_ts_parameters(env,neighbors,var_0,mu_0,var)
 
     # Posterior sampling
     mu_sample = np.random.normal(mu_1,np.sqrt(var_1))
@@ -79,8 +87,6 @@ def UCRL2_ucb(env,nodes=None,delta = 0.01):
     A = 2 * env.G.number_of_edges() # Since our graph is undirected, A = 2|E|
 
     ucb = ave_reward + np.sqrt(7*np.log(2*S*A*tm/delta)/(2*nm))
-    # ucb = ave_reward + np.sqrt(7*np.log(2*S*tm/delta)/(2*nm))
-    # ucb = ave_reward + np.sqrt(2*np.log(tm)/nm)
     return ucb
 
 def UCRL2_agent(env,delta = 0.01):
@@ -101,3 +107,29 @@ def UCRL2_agent(env,delta = 0.01):
         visits_this_episode[env.state]+=1
         next_s = policy[env.state]
         env.step(next_s)
+
+
+# def PSRL_agent(env,var_0 = 1,
+#                     mu_0 = 0.0,
+#                     var = 1):
+
+
+#     # Sample distributions.
+#     mu_1,var_1 = get_ts_parameters(env,env.nodes, var_0,mu_0,var)
+#     sampled_means = np.random.normal(mu_1,np.sqrt(var_1))
+
+#     # Compute the epsilon-optimal policy based on the sampled means
+#     tm = len(env.visitedStates)
+#     epsilon = 1/np.max([1,np.sqrt(tm)])
+#     policy,_ = EVI_known_transition_planning(env.G,sampled_means,epsilon = epsilon)
+
+#     prev_visits = {s:env.nodes[s]['n_visits'] for s in env.G}
+#     visits_this_episode = {s:0 for s in env.G}
+
+#     # Keep executing the policy until the doubling terminal condition specified in Agrawal(2017), which is the same as in Jacksh(2008), is meet.
+#     while visits_this_episode[env.state]< np.max([1,prev_visits[env.state]]):
+#     # for i in range(10):
+#         visits_this_episode[env.state]+=1
+#         next_s = policy[env.state]
+#         env.step(next_s)
+#             

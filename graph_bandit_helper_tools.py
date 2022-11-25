@@ -11,7 +11,7 @@ from tqdm import trange
         
 
 
-def return_graph(graph_type='fully_connected', n_nodes=6, n_children=None):
+def return_graph(graph_type='fully_connected', n_nodes=6, n_children=2):
     """
     Returns specified graph type.
     
@@ -38,7 +38,6 @@ def return_graph(graph_type='fully_connected', n_nodes=6, n_children=None):
             G.add_edge(i,i)
             G.add_edge(0,i)
     elif graph_type=='tree':
-        assert n_children is not None
         G.add_edge(0,0)
         children = {0:0}
         for i in range(1,n_nodes):

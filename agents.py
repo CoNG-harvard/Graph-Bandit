@@ -141,7 +141,7 @@ def UCRL2_agent(env,delta = 0.01):
          
 class QL_agent:
     
-    def __init__(self,alpha=0.1, gamma=0.9):
+    def __init__(self,alpha=0.4, gamma=0.9):
                  
         """
         param alpha: Q-learning parameter (if applicable)
@@ -176,7 +176,7 @@ class QL_agent:
 
         # Caculate the exploration strength epsilon
 
-        epsilon = 0.7*(3*num_nodes + 1) / (3*num_nodes + h)
+        epsilon = 1.5*(3*num_nodes + 1) / (3*num_nodes + h)
         
         neighbors = list(env.G[state])
         if np.random.uniform(0, 1) < epsilon:
@@ -192,21 +192,94 @@ class QL_agent:
         if action is not None:
             
             
-            next_state, QL_reward, done = env.step(action)
+            next_state, reward, done = env.step(action)
             
-            next_state = action
-            old_value = self.q_table[state, action]
-
-            assert(np.isfinite(old_value))
-            next_max = np.max(self.q_table[next_state])
+            assert(next_state == action)
 
             for node in env.G[action]:
-                
+
                 old_value = self.q_table[node, action]
-                mu_hat = env.nodes[node]['r_sum']/env.nodes[node]['n_visits']
-               
+                assert(np.isfinite(old_value))
                 
-                # new_value = (1 - self.alpha) * old_value + self.alpha * (QL_reward + self.gamma * next_max)
-                new_value = mu_hat + self.gamma * next_max
+                self.q_table[node, action] \
+                        = (1-self.alpha) * old_value +\
+                              self.alpha * (reward + self.gamma * np.max(self.q_table[action,:]))
+
+class QL_UCB_Hoeffding:
+    
+    def __init__(self, gamma=0.9,c=1):
+                 
+        """
+        A Q-learning algorithm based on [Jin(2018): Is Q learning provably efficient?].
+
+        Multiple tweaks are applied to the algorithm developed in the paper.
+        1. Some level of epsilon-greedy exploration is still needed for the algorithm to perform reasonably well.
+        2. The value update is done on all the neighbors of the next_state, instead of just (prev_state,next_state). See the end of the __call__() method.
+
+        param alpha: Q-learning parameter (if applicable)
+        param gamma: RL discount factor (if applicable)
+        param epsilon: exploration parameter (if applicable)
+        """
+    
+        # The state-value list.
+        self.q_table = None
+        
+        # Q-Learning Parameters
+        self.gamma = gamma
+        self.H = 1/gamma 
+        # Since we are doing infinite horizon problem, we need to replace the episode length H with some number.
+        # Typically, it is reasonable to assume 1/gamma as the effective episode length. Which is what we use here.
+        
+        self.c = c # The absolute constant in the confidence bonus.
+    def __call__(self,env):
+           
+        num_nodes = env.G.number_of_nodes()
+        num_edges = env.G.number_of_edges()
+        
+        if self.q_table is None:
+             # Initialize Q-table
+            self.q_table = np.zeros((num_nodes,num_nodes))      
+
+            # Eliminate actions that are 'illegal' (agent can only go via edges)
+            for i in range(num_nodes):
+                for j in range(num_nodes):
+                    if (i,j) not in env.G.edges:
+                        self.q_table[i,j] = -np.inf
+           
+        h = len(env.visitedStates)
+        
+        p = 1/np.sqrt(h) # Confidence parameter. Following the suggestion in Jacksch(2010)
+        
+        epsilon = 0.7*(3*num_nodes + 1) / (3*num_nodes + h)
+        
+        neighbors = list(env.G[env.state])
+        if np.random.uniform(0, 1) < epsilon:
+            # 'Greedy efficient' exploration: Returns least explored available action.
+            N_explorations = [env.nodes[nb]['n_visits'] for nb in neighbors]
+            action = neighbors[np.argmin(N_explorations)]
+        else:
+            action = np.argmax(self.q_table[env.state]) # Decide action.
+        
+        # Next state, reward, and store reward
+        if action is not None:
+            
+            next_state, reward, done = env.step(action)
+            
+            assert(next_state == action)
+            
+            for node in env.G[action]:
+
+                old_value = self.q_table[node, action]
+                assert(np.isfinite(old_value))
                 
-                self.q_table[node, action] = new_value
+                t =  env.edges[(node,action)]['n_visits'] 
+                t = np.max([1,t])# To avoid division by zero
+                
+                b = self.c * np.sqrt(self.H ** 3 * np.log(num_nodes * num_edges * t/p) / t) # The confidence bonus.
+                                               
+                alpha = (self.H+1)/(self.H+t)
+
+                self.q_table[node, action] \
+                        = (1-alpha) * old_value +\
+                              alpha * (reward + self.gamma * np.max(self.q_table[action,:]) + b)\
+                             

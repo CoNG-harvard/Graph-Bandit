@@ -22,6 +22,7 @@ class GraphBandit:
         self.bayesian_params = bayesian_params.copy()
         self.state = init_state
         self.nodes = self.G.nodes
+        self.edges = self.G.edges
         self.visited_expected_rewards = []
         
         # Number of nodes
@@ -30,9 +31,11 @@ class GraphBandit:
                     
         # Store history of rewards and number of vistits for each node, as well as number of (state -> action) encounters
         for n in self.nodes:
-            self.nodes[n]['r_sum']= 0
-            self.nodes[n]['n_visits']= 0 
-          
+            self.nodes[n]['r_sum'] = 0
+            self.nodes[n]['n_visits'] = 0 
+        for e in self.edges:
+            self.edges[e]['n_visits'] = 0 
+
         # List of all visited states
         self.visitedStates = [] 
         
@@ -51,9 +54,10 @@ class GraphBandit:
             
             
             self.nodes[self.state]['n_visits'] += 1
+            self.edges[(state_old,action)]['n_visits'] += 1
+            
             self.visited_expected_rewards.append(self.mean[self.state])
-                   
-                
+
         else:
             print(self.state)
             print(action)

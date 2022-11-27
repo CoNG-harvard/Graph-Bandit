@@ -39,6 +39,7 @@ def offline_SP_planning(G_cyc,means):
         # Terminate early if no update is made.
         if not updated:
             break
+    # print('n_iter',n_iter)
     return policy,n_calls,n_iter
              
 def EVI_known_transition_planning(G,means,epsilon = 0.0001):
@@ -51,6 +52,7 @@ def EVI_known_transition_planning(G,means,epsilon = 0.0001):
     iter_count = 0
     
     max_iter = np.min([1e4,1/epsilon]) 
+
     #  max_iter: Hard upper-bound of the number of iterations, to ensure the algorithm does not fall into infinite loop
 
     while iter_count<=max_iter:
@@ -66,8 +68,9 @@ def EVI_known_transition_planning(G,means,epsilon = 0.0001):
             # print('Gap',np.max(u-u_old) - np.min(u-u_old))
             break
 
-    policy = {s:list(G[s])[np.argmax(u[G[s]])] for s in G}
+    # print('iter_count',iter_count)
 
+    policy = {s:list(G[s])[np.argmax(u[G[s]])] for s in G}
     if iter_count> max_iter:
         warnings.warn('Value iteration terminated before reaching the stopping condition, the resulting policy may be suboptimal.')
     return policy, u

@@ -78,7 +78,7 @@ def local_ts_agent(env,
 
 def UCRL2_ucb(env,nodes=None,delta = 0.01):
     '''
-        delta: a number in (0, 1], characterizing the probability that the true mean falls into the confidence interval [LCB, UCB]
+        delta: a number in (0, 1], where 1-delta characterizes the probability that the true mean falls into the confidence interval [LCB, UCB]
     '''
     if nodes is None:
         nodes = env.nodes

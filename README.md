@@ -16,13 +16,13 @@ This repository contains the implementation of  graph bandit algorithms and the 
 
 **graph_bandit.py**: the class definition of graph bandit environment, which includes a class method that trains a Q-learning agent.
 
-**agents.py**: contains the agent implementing our propose algorithm(under the name doubling_agent), as well as the local Thompson Sampling and UCB agents.
+**agents.py**: contains the agent implementing our propose algorithm(under the name GUCB_agent), as well as the local Thompson Sampling and UCB agents.
 
 **core.py**: contains a function that visits all nodes at least once(used in initialization), and the train_agent() function.
 
-**known_rewards_helper_functions.py**: the shortest path algorithm for off-line planning.
+**planning.py**: Contains two offline planning algorithm. The shortest path algorithm for off-line planning in G-UCB and the value iteration planning in UCRL2.
 
-**graph_bandit_helper_tools.py**: contains a graph generator, a graph drawing utility, and a wrapper for training a Q-learning agent.
+**utils.py**: contains a graph generator, a graph drawing utility, and a wrapper for training a Q-learning agent.
 
 ## Contents of the Python notebooks
 

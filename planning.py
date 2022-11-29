@@ -71,8 +71,6 @@ def EVI_known_transition_planning(G,means,epsilon = 0.0001):
     # print('iter_count',iter_count)
 
     policy = {s:list(G[s])[np.argmax(u[G[s]])] for s in G}
-    if iter_count> max_iter:
-        warnings.warn('Value iteration terminated before reaching the stopping condition, the resulting policy may be suboptimal.')
     return policy, u
     
         

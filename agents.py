@@ -1,6 +1,6 @@
 import numpy as np
 
-from known_rewards_helper_functions import offline_SP_planning,EVI_known_transition_planning
+from planning import offline_SP_planning,EVI_known_transition_planning
 
 
 def get_ucb(env,nodes=None):
@@ -17,7 +17,7 @@ def get_ucb(env,nodes=None):
     
     return ucb
 
-def doubling_agent(env):
+def GUCB_agent(env):
     ucb = get_ucb(env)
     # Compute optimal policy.
     policy,_,_ = offline_SP_planning(env.G,ucb)
@@ -97,18 +97,17 @@ def UCRL2_ucb(env,nodes=None,delta = 0.01):
 
 def UCRL2_agent(env,delta = 0.01):
     
+    # Compute the UCB defined in Jacksh(2008).
     ucb = UCRL2_ucb(env,delta = 0.01)
     
+    # Compute the policy.
     tm = len(env.visitedStates)
     epsilon = 1/np.sqrt(tm) # The stopping condition of value iteration as specified in Jacksch(2008).
-    
-    # Compute the policy.
     policy,_ = EVI_known_transition_planning(env.G,ucb,epsilon = epsilon)
     
+    # Keep executing the policy until the doubling terminal condition specified in Jacksh(2008) is meet.
     prev_visits = {s:env.nodes[s]['n_visits'] for s in env.G}
     visits_this_episode = {s:0 for s in env.G}
-    
-    # Keep executing the policy until the doubling terminal condition specified in Jacksh(2008) is meet.
     while visits_this_episode[env.state]< np.max([1,prev_visits[env.state]]):
         visits_this_episode[env.state]+=1
         next_s = policy[env.state]

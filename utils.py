@@ -5,12 +5,6 @@ import networkx as nx
 import graph_bandit
 from tqdm import trange
 
-
-
-           
-        
-
-
 def return_graph(graph_type='fully_connected', n_nodes=6, n_children=2):
     """
     Returns specified graph type.

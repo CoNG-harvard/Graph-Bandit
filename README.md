@@ -25,7 +25,7 @@ The link to our paper: [Multi-armed Bandit Learning on a Graph](https://arxiv.or
 
 **planning.py**: Contains two offline planning algorithm. The shortest path algorithm for off-line planning in G-UCB and the value iteration planning in UCRL2.
 
-**utils.py**: contains a graph generator, a graph drawing utility, and a wrapper for training a Q-learning agent.
+**utils.py**: contains a graph generator and a graph drawing utility.
 
 ## Contents of the Python notebooks
 

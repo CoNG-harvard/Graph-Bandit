@@ -2,7 +2,7 @@
 
 This repository contains the implementation of  graph bandit algorithms and the corresponding numerical experiments. The code are written in Python. 
 
-The link to our paper: [Multi-armed Bandit Learning on a Graph](https://scholar.harvard.edu/files/tianpeng/files/graphbandittechnicalreport.pdf)
+The link to our paper: [Multi-armed Bandit Learning on a Graph](https://arxiv.org/abs/2209.09419)
 
 **Python packages** required for running the experiments: 
 
